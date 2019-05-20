@@ -36,18 +36,18 @@ energy_balance_tbl_raw <- as.data.frame(energy_balance_px) %>%
 
 sample_n(energy_balance_tbl_raw, 10)
 #> # A tibble: 10 x 4
-#>    year  fuel_type                energy_supply_and_consumption                                value
-#>    <fct> <fct>                    <fct>                                                        <dbl>
-#>  1 2004  Bituminous coal          Transformation input- oil refineries and other energy secto…     0
-#>  2 2006  Hydro                    Fisheries                                                        0
-#>  3 2004  Gasoil/diesel/DERV       Sum of all commercial and public services                      443
-#>  4 2003  Lignite                  Mar. bunkers                                                     0
-#>  5 2010  Milled peat              Transport- international aviation                                0
-#>  6 2017  Electricity              Transformation output- combined heat and power plants- heat      0
-#>  7 2002  Solar                    Public services                                                  0
-#>  8 2003  Biogas                   Sum of all commercial and public services                        2
-#>  9 2002  Sum of all coal products Industry- chemicals and man-made fibres                          0
-#> 10 2013  Petroleum coke           Transport- road freight                                          0
+#>    year  fuel_type                energy_supply_and_consumption           value
+#>    <fct> <fct>                    <fct>                                   <dbl>
+#>  1 1998  Natural gas              Industry- machinery and equipment n.e.c     8
+#>  2 1999  Natural gas              Non-energy consumption                    410
+#>  3 2009  Sum of all fuel products Exports                                   986
+#>  4 2004  Gasoline                 Indigenous production                       0
+#>  5 2008  Coke                     Industry- machinery and equipment n.e.c     0
+#>  6 1995  Lignite                  Exchanges and transfers- heat               0
+#>  7 2008  Wind                     Stock change                                0
+#>  8 2002  Refinery gas             Transport- road private car                 0
+#>  9 1990  Biomass                  Sum of all transport                        0
+#> 10 1999  Gasoil/diesel/DERV       Public services                           178
 ```
 
 ## Munging
