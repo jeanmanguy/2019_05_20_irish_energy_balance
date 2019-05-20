@@ -161,7 +161,7 @@ production_anim <- energy_balance_tbl %>%
     axis.title.y = element_blank()
   ) +
   labs(
-    title = "Source of energy",
+    title = "Energy production",
     subtitle = "in Republic of Ireland, year: {year(frame_time)}",
     x = "energy (kilotonne of oil equivalent)",
     fill = "",
@@ -175,11 +175,11 @@ animate(production_anim, width = 600, height = 600, units = "px")
 anim_save("production_energy_roi.gif")
 ```
 
-### Consuption
+### Energy consumption
 
 
 ```{r}
-consuption_anim <- energy_balance_tbl %>%
+consumption_anim <- energy_balance_tbl %>%
   filter(energy_supply_and_consumption_category == "consumption") %>% 
   group_by(year, energy_supply_and_consumption_subsubcategory, energy_supply_and_consumption_subcategory) %>% 
   summarise(energy = sum(energy)) %>% 
@@ -194,7 +194,7 @@ consuption_anim <- energy_balance_tbl %>%
     axis.title.y = element_blank()
   ) +
   labs(
-    title = "Consuption of energy",
+    title = "Energy consumption",
     subtitle = "in Republic of Ireland, year: {year(frame_time)}",
     x = "energy (kilotonne of oil equivalent)",
     fill = "",
@@ -204,9 +204,9 @@ consuption_anim <- energy_balance_tbl %>%
   enter_grow()
   
 
-animate(consuption_anim, width = 640, height = 500, units = "px")
+animate(consumption_anim, width = 640, height = 500, units = "px")
 
-anim_save("consuption_energy_roi.gif")
+anim_save("consumption_energy_roi.gif")
 ```
 
 

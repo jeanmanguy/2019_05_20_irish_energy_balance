@@ -36,18 +36,18 @@ energy_balance_tbl_raw <- as.data.frame(energy_balance_px) %>%
 
 sample_n(energy_balance_tbl_raw, 10)
 #> # A tibble: 10 x 4
-#>    year  fuel_type                energy_supply_and_consumption                                value
-#>    <fct> <fct>                    <fct>                                                        <dbl>
-#>  1 2008  Lubricants               Transformation output- combined heat and power plants- heat      0
-#>  2 2007  Lignite                  Industry- wood and wood products                                 0
-#>  3 2004  Milled peat              Sum of all transport                                             0
-#>  4 1998  Bitumen                  Public services                                                  0
-#>  5 2006  LPG                      Indigenous production                                            0
-#>  6 1997  Bitumen                  Own use and distribution losses                                  0
-#>  7 2009  Biogas                   Transport- rail                                                  0
-#>  8 1991  Sum of all coal products Available final energy consumption                             819
-#>  9 1994  Fuel oil                 Exchanges and transfers- other (excluding electricity and h…     0
-#> 10 2012  Petroleum coke           Industry- textiles and textile products                          0
+#>    year  fuel_type                     energy_supply_and_consumption                           value
+#>    <fct> <fct>                         <fct>                                                   <dbl>
+#>  1 2001  Kerosene                      Total final energy consumption                            746
+#>  2 1993  Naphta                        Primary energy requirement excluding non energy           -30
+#>  3 2016  Hydro                         Industry- pulp, paper, publishing and printing              0
+#>  4 1999  Anthracite and manufactured … Fisheries                                                   0
+#>  5 2012  Bituminous coal               Transformation input- briquetting plants                    0
+#>  6 2004  Biomass                       Exports                                                     0
+#>  7 1994  Petroleum coke                Transport- Sum of all aviation transport                    0
+#>  8 1998  Biogas                        Transport- road private car                                 0
+#>  9 2006  White spirit                  Transformation output- combined heat and power plants-…     0
+#> 10 2007  White spirit                  Transport- road light goods vehicle                         0
 ```
 
 ## Munging
@@ -171,7 +171,7 @@ production_anim <- energy_balance_tbl %>%
     axis.title.y = element_blank()
   ) +
   labs(
-    title = "Source of energy",
+    title = "Energy production",
     subtitle = "in Republic of Ireland, year: {year(frame_time)}",
     x = "energy (kilotonne of oil equivalent)",
     fill = "",
@@ -190,10 +190,10 @@ animate(production_anim, width = 600, height = 600, units = "px")
 anim_save("production_energy_roi.gif")
 ```
 
-### Consuption
+### Energy consumption
 
 ``` r
-consuption_anim <- energy_balance_tbl %>%
+consumption_anim <- energy_balance_tbl %>%
   filter(energy_supply_and_consumption_category == "consumption") %>% 
   group_by(year, energy_supply_and_consumption_subsubcategory, energy_supply_and_consumption_subcategory) %>% 
   summarise(energy = sum(energy)) %>% 
@@ -208,7 +208,7 @@ consuption_anim <- energy_balance_tbl %>%
     axis.title.y = element_blank()
   ) +
   labs(
-    title = "Consuption of energy",
+    title = "Energy consumption",
     subtitle = "in Republic of Ireland, year: {year(frame_time)}",
     x = "energy (kilotonne of oil equivalent)",
     fill = "",
@@ -218,14 +218,14 @@ consuption_anim <- energy_balance_tbl %>%
   enter_grow()
   
 
-animate(consuption_anim, width = 640, height = 500, units = "px")
+animate(consumption_anim, width = 640, height = 500, units = "px")
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-6-1.gif)<!-- -->
 
 ``` r
 
-anim_save("consuption_energy_roi.gif")
+anim_save("consumption_energy_roi.gif")
 ```
 
 ## Session info
