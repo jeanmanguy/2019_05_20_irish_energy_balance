@@ -9,6 +9,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+options(width = 100)
 ```
 # Irish Energy Balance Statistics
 
@@ -21,20 +22,24 @@ library("tidyverse")
 library("janitor")
 library("lubridate")
 library("hrbrthemes")
+library("ggstance")
+library("gganimate")
 ```
 
+_Disclaimer: I am not an expert in energy. I quickly  realised the following visualisations for my first TidyTuesday, and to learn how to use {[gganimate](https://github.com/thomasp85/gganimate)}. I'm sure I made some mistakes along the way and that things could look a little bit better._
 
 ## Data
 
-Source: [Sustainable Energy Authority of Ireland](https://www.cso.ie/px/pxeirestat/Database/eirestat/Energy%20Balance%20Statistics/Energy%20Balance%20Statistics_statbank.asp?SP=Energy%20Balance%20Statistics&Planguage=0&ProductID=DB_SEI)
+Source: [Sustainable Energy Authority of Ireland](https://www.cso.ie/px/pxeirestat/Database/eirestat/Energy%20Balance%20Statistics/Energy%20Balance%20Statistics_statbank.asp?SP=Energy%20Balance%20Statistics&Planguage=0&ProductID=DB_SEI).
+
 
 ```{r}
 energy_balance_px <- read.px("data/SEI01.px")
 energy_balance_tbl_raw <- as.data.frame(energy_balance_px) %>%
   as_tibble() %>%
   clean_names()
-# attr(energy_balance_tbl_raw$value, "label") <- "ktoe" # kilotonne of oil equivalent
-head(energy_balance_tbl_raw)
+
+sample_n(energy_balance_tbl_raw, 10)
 ```
 
 
@@ -42,6 +47,7 @@ head(energy_balance_tbl_raw)
 
 ```{r}
 energy_balance_tbl <- energy_balance_tbl_raw %>%
+  mutate_if(is.factor, as.character) %>% 
   mutate_at(vars(year), parse_date_time, orders = "%Y") %>%
   filter(!str_detect(fuel_type, "^Sum of all")) %>%
   rename(energy = value) %>%
@@ -55,7 +61,7 @@ energy_balance_tbl <- energy_balance_tbl_raw %>%
       peat = c("Milled peat", "Sod peat", "Briquettes")
     )
   ) %>%
-  filter(!str_detect(energy_supply_and_consumption, "[Ss]um of all")) %>%# remove summary rows
+  filter(!str_detect(energy_supply_and_consumption, "[Ss]um of all")) %>% # remove summary rows
   filter(!energy_supply_and_consumption %in% c("Total final energy consumption", "Final non energy consumption feedstocks", "Available final energy consumption", "Statistical difference", "Primary energy supply including non energy", "Primary energy requirement excluding non energy")) %>%
   mutate(
     energy_supply_and_consumption_subsubcategory = fct_collapse(energy_supply_and_consumption, # heavy usage of datapasta
@@ -93,52 +99,18 @@ energy_balance_tbl <- energy_balance_tbl_raw %>%
   mutate_at(vars(energy_supply_and_consumption), str_remove, pattern = "^.*-")
 ```
 
-## Analysis
-
-### Production
-
-```{r}
-energy_balance_tbl %>% 
-  filter(energy_supply_and_consumption_category  == "supply gains") %>% 
-  group_by(year, fuel_type_category) %>% 
-  summarise(total_production = sum(energy)) %>% 
-  ungroup() %>% 
-  ggplot(mapping = aes(x = year(year), y = total_production, group = fuel_type_category)) +
-    geom_line() +
-    theme_minimal() +
-  facet_wrap(~fuel_type_category, scales = "free_y") +
-  NULL
-```
-
-#### Dependencies
-
-```{r}
-energy_balance_tbl %>% 
-  filter(energy_supply_and_consumption_category  == "supply gains") %>% 
-  group_by(year, fuel_type_category, energy_supply_and_consumption) %>% 
-  summarise(energy = sum(energy)) %>% 
-  ggplot(mapping = aes(x = year, y = energy)) +
-  geom_bar(mapping = aes(fill = energy_supply_and_consumption), stat = "identity") +
-  facet_wrap(~fuel_type_category) +
-  theme(
-    legend.position = c(1, 0),
-    legend.justification = c(1, 0)
-  ) +
-  labs(
-    fill = "source"
-  )
-```
+## Visualisations
 
 
-### Renewable
+### Renewable energy
 
-```{r fig.height=8, fig.width=5}
-p <- energy_balance_tbl %>% 
-  filter(energy_supply_and_consumption_category  == "supply gains") %>% 
-  filter(!fuel_type == "Electricity") %>% 
-  mutate(is_renewable = fuel_type_category == "renewable") %>% 
-  group_by(year, is_renewable) %>% 
-  summarise(energy = sum(energy)) %>% 
+```{r fig.height=5.5, fig.width=4.5}
+renewable_plot <- energy_balance_tbl %>%
+  filter(energy_supply_and_consumption_category == "supply gains") %>%
+  filter(!fuel_type == "Electricity") %>%
+  mutate(is_renewable = fuel_type_category == "renewable") %>%
+  group_by(year, is_renewable) %>%
+  summarise(energy = sum(energy)) %>%
   ggplot(mapping = aes(x = year(year), y = energy, fill = is_renewable, colour = is_renewable)) +
   geom_bar(stat = "identity", position = "fill") +
   geom_hline(yintercept = 0.16 - 0.01, size = 0.5, linetype = "dotted") +
@@ -147,7 +119,7 @@ p <- energy_balance_tbl %>%
   scale_x_continuous(breaks = c(1990, 2000, 2010, 2017)) +
   scale_color_ipsum() +
   scale_fill_ipsum() +
-  theme_ipsum() +
+  theme_ipsum_pub() +
   theme(
     legend.position = "none",
     axis.text = element_text(),
@@ -155,53 +127,93 @@ p <- energy_balance_tbl %>%
     panel.grid.minor = element_blank()
   ) +
   labs(
-    title = "The rise of renewable energy",
+    title = "Renewable energy",
     subtitle = "in Republic Of Ireland, 1990-2017",
     x = "year",
     y = "% energy supply",
     caption = "data: SEAI/CSO"
   )
 
-p
+renewable_plot
+
+ggsave("renewable_energy_roi.png")
 ```
 
 
 
-### Comsuption
 
-```{r fig.height=8, fig.width=7}
-p <- energy_balance_tbl %>% 
-  filter(energy_supply_and_consumption_category  == "consumption") %>% 
+Ireland is only green from the sky. More renewable source of energies would also make the island less dependent from other countries petrol.
+
+### Energy production 
+
+```{r}
+production_anim <- energy_balance_tbl %>%
+  filter(energy_supply_and_consumption_category == "supply gains") %>%
+  mutate(fuel_type = fct_reorder(fuel_type, as.numeric(fuel_type_category))) %>%
+  ggplot(mapping = aes(x = energy, y = fuel_type, fill = fuel_type_category)) +
+  geom_barh(stat = "identity") +
+  theme_ipsum_pub() +
+  scale_fill_ipsum(guide = guide_legend(nrow = 2)) +
+  theme(
+    legend.position = c(1, 1),
+    legend.justification = c(1, 1),
+    legend.direction = "horizontal",
+    axis.title.y = element_blank()
+  ) +
+  labs(
+    title = "Source of energy",
+    subtitle = "in Republic of Ireland, year: {year(frame_time)}",
+    x = "energy (kilotonne of oil equivalent)",
+    fill = "",
+    caption = "data: SEAI/CSO"
+  ) +
+  transition_time(year) +
+  enter_grow()
+
+animate(production_anim, width = 600, height = 600, units = "px")
+
+anim_save("production_energy_roi.gif")
+```
+
+### Consuption
+
+
+```{r}
+consuption_anim <- energy_balance_tbl %>%
+  filter(energy_supply_and_consumption_category == "consumption") %>% 
   group_by(year, energy_supply_and_consumption_subsubcategory, energy_supply_and_consumption_subcategory) %>% 
   summarise(energy = sum(energy)) %>% 
-  ggplot(mapping = aes(x = year(year), y = energy)) +
-  geom_line(mapping = aes(group = energy_supply_and_consumption_subsubcategory)) +
-  scale_x_continuous(breaks = c(1990, 2000, 2010, 2017)) +
-  theme_minimal() +
+  ggplot(mapping = aes(x = energy, y = energy_supply_and_consumption_subsubcategory, fill = energy_supply_and_consumption_subcategory)) +
+  geom_barh(stat = "identity") +
+  theme_ipsum_pub() +
+  scale_fill_brewer(palette = "Set2", guide = guide_legend(nrow = 2)) +
   theme(
-    legend.position = c(0, 1),
-    legend.justification = c(0, 1)
+    legend.position = c(1, 1.15),
+    legend.justification = c(1, 1),
+    legend.direction = "horizontal",
+    axis.title.y = element_blank()
   ) +
-  facet_wrap(~ energy_supply_and_consumption_subsubcategory, scales = "free_y", ncol = 3) +
-  NULL
+  labs(
+    title = "Consuption of energy",
+    subtitle = "in Republic of Ireland, year: {year(frame_time)}",
+    x = "energy (kilotonne of oil equivalent)",
+    fill = "",
+    caption = "data: SEAI/CSO"
+  ) +
+  transition_time(year) +
+  enter_grow()
   
-p
 
+animate(consuption_anim, width = 640, height = 500, units = "px")
+
+anim_save("consuption_energy_roi.gif")
 ```
 
-
-### consumption
-
-
-```{r fig.height=7, fig.width=7}
-
-# consumption_data <- energy_balance_tbl %>% 
-#   filter(year(year) == 2009) %>%
-#   filter(energy_supply_and_consumption_category == "consumption") %>% 
-# 
-# 
-
-```
 
 
 ## Session info
+
+```{r fig.width=10}
+sessioninfo::session_info()
+```
+
